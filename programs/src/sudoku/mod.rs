@@ -1,4 +1,5 @@
-use valida_machine::{ExtensionField, InstructionWord, PrimeField64};
+use p3_field::{ExtensionField, PrimeField64};
+use valida_machine::InstructionWord;
 
 pub fn generate_sudoku_program<Val: PrimeField64, Challenge: ExtensionField<Val>>(
 ) -> Vec<InstructionWord<i32>> {

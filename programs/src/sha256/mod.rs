@@ -1,5 +1,7 @@
+use p3_field::ExtensionField;
+use p3_field::PrimeField64;
 use valida_assembler::assemble;
-use valida_machine::{ExtensionField, InstructionWord, PrimeField64, ProgramROM};
+use valida_machine::{InstructionWord, ProgramROM};
 
 pub fn generate_sha256_program<Val: PrimeField64, Challenge: ExtensionField<Val>>(
 ) -> Vec<InstructionWord<i32>> {

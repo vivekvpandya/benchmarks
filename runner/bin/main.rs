@@ -7,8 +7,8 @@ use valida_benchmark_programs::{
 };
 use valida_cpu::MachineWithCpuChip;
 use valida_machine::__internal::p3_commit::ExtensionMmcs;
-use valida_machine::config::{StarkConfig, StarkConfigImpl};
-use valida_machine::{Machine, PrimeField64, ProgramROM};
+use valida_machine::{FixedAdviceProvider, StarkConfig, StarkConfigImpl};
+use valida_machine::{Machine, ProgramROM};
 use valida_program::MachineWithProgramChip;
 
 use p3_baby_bear::BabyBear;
@@ -16,6 +16,7 @@ use p3_challenger::DuplexChallenger;
 use p3_dft::Radix2Bowers;
 use p3_field::extension::BinomialExtensionField;
 use p3_field::Field;
+use p3_field::PrimeField64;
 use p3_fri::{FriBasedPcs, FriConfigImpl, FriLdt};
 use p3_keccak::Keccak256Hash;
 use p3_ldt::QuotientMmcs;
@@ -62,7 +63,7 @@ enum ProverType {
 struct UniOptions {
     #[arg(value_enum, default_value = "baby-bear")]
     base: BaseField,
-    #[arg(value_enum, default_value = "baby-bear-quintic")]
+    #[arg(value_enum, default_value = "baby-bear-quartic")]
     extension: ExtField,
     #[arg(value_enum, default_value = "keccak")]
     hash: HashFunction,
@@ -126,14 +127,14 @@ fn new_baby_bear_keccak_config(options: &UniOptions) -> impl StarkConfig<Val = B
     type Challenger = DuplexChallenger<Val, Perm16, 16>;
 
     type Quotient = QuotientMmcs<Domain, Challenge, ValMmcs>;
-    type MyFriConfig = FriConfigImpl<Val, Domain, Challenge, Quotient, ChallengeMmcs, Challenger>;
-    let fri_config = MyFriConfig::new(options.num_fri_queries, challenge_mmcs);
+    type MyFriConfig = FriConfigImpl<Val, Challenge, Quotient, ChallengeMmcs, Challenger>;
+    let fri_config = MyFriConfig::new(1, options.num_fri_queries, 8, challenge_mmcs);
     let ldt = FriLdt { config: fri_config };
 
     type Pcs = FriBasedPcs<MyFriConfig, ValMmcs, Dft, Challenger>;
-    type MyConfig = StarkConfigImpl<Val, Domain, Challenge, PackedChallenge, Pcs, Challenger>;
+    type MyConfig = StarkConfigImpl<Val, Challenge, PackedChallenge, Pcs, Challenger>;
 
-    let pcs = Pcs::new(dft, 1, val_mmcs, ldt);
+    let pcs = Pcs::new(dft, val_mmcs, ldt);
     let challenger = DuplexChallenger::new(perm16);
     MyConfig::new(pcs, challenger)
 }
@@ -164,15 +165,17 @@ where
     };
 
     // Set up the basic machine state
-    let mut machine = BasicMachine::<C::Val, C::Challenge>::default();
+    let mut machine = BasicMachine::<C::Val>::default();
     let rom = ProgramROM::new(rom);
     machine.program_mut().set_program_rom(&rom);
     machine.cpu_mut().fp = stack_height as u32;
     machine.cpu_mut().save_register_state();
 
+    let mut advice = FixedAdviceProvider::empty();
+
     // Time the execution and proof generation
     let start = Instant::now();
-    machine.run(&rom);
+    machine.run(&rom, &mut advice);
     machine.prove(&config);
     let duration = start.elapsed();
     println!("Time elapsed in milliseconds: {:?}", duration.as_millis());

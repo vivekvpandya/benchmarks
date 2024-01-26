@@ -17,3 +17,4 @@ valida-memory = { path = "../../valida/memory" }
 valida-range = { path = "../../valida/range" }
 valida-opcodes = { path = "../../valida/opcodes" }
 valida-program = { path = "../../valida/program" }
+p3-field = { path = "../../Plonky3/field" }

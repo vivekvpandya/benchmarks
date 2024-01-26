@@ -1,5 +1,6 @@
+use p3_field::{ExtensionField, PrimeField64};
 use valida_assembler::assemble;
-use valida_machine::{ExtensionField, InstructionWord, PrimeField64, ProgramROM};
+use valida_machine::{InstructionWord, ProgramROM};
 
 pub fn generate_fibonacci_program<Val: PrimeField64, Challenge: ExtensionField<Val>>(
 ) -> Vec<InstructionWord<i32>> {
