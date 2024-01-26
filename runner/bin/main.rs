@@ -164,14 +164,17 @@ where
         ExampleProgram::Sudoku => generate_sudoku_program::<C::Val, C::Challenge>(),
     };
 
+    let mut advice = match example_program {
+        ExampleProgram::Fibonacci => FixedAdviceProvider::new(vec![23]),
+        _ => FixedAdviceProvider::empty(),
+    };
+
     // Set up the basic machine state
     let mut machine = BasicMachine::<C::Val>::default();
     let rom = ProgramROM::new(rom);
     machine.program_mut().set_program_rom(&rom);
     machine.cpu_mut().fp = stack_height as u32;
     machine.cpu_mut().save_register_state();
-
-    let mut advice = FixedAdviceProvider::empty();
 
     // Time the execution and proof generation
     let start = Instant::now();
